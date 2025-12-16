@@ -29,6 +29,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . $endpoint);
 
             if ($response->failed()) {
@@ -96,6 +97,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/stats');
 
             if ($response->failed()) {
@@ -133,6 +135,7 @@ class AdminController extends Controller
             ];
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/students', $params);
 
             if ($response->failed()) {
@@ -158,6 +161,7 @@ class AdminController extends Controller
             ];
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/landlords', $params);
 
             if ($response->failed()) {
@@ -185,6 +189,7 @@ class AdminController extends Controller
             ];
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/payments', $params);
 
             if ($response->failed()) {
@@ -211,6 +216,7 @@ class AdminController extends Controller
             ];
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/bookings', $params);
 
             if ($response->failed()) {
@@ -236,6 +242,7 @@ class AdminController extends Controller
             ];
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/hostels', $params);
 
             if ($response->failed()) {
@@ -255,6 +262,7 @@ class AdminController extends Controller
         try {
             // Get current user details from FastAPI server
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/user-details');
 
             if ($response->failed()) {
@@ -282,6 +290,7 @@ class AdminController extends Controller
             ];
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/logs', $params);
 
             if ($response->failed()) {
@@ -411,6 +420,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->put($this->apiBaseUrl . '/admin/users/' . $userId . '/status', [
                     'new_status' => $request->get('new_status')
                 ]);
@@ -431,6 +441,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->put($this->apiBaseUrl . '/admin/hostels/' . $hostelId . '/status', [
                     'new_status' => $request->get('new_status')
                 ]);
@@ -463,6 +474,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->put($this->apiBaseUrl . '/admin/config/' . $configKey, [
                     'value' => $request->get('value')
                 ]);
@@ -483,6 +495,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/config');
 
             if ($response->failed()) {
@@ -502,6 +515,7 @@ class AdminController extends Controller
     {
         try {
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/verifications');
 
             if ($response->failed()) {
@@ -522,6 +536,7 @@ class AdminController extends Controller
         try {
             $response = Http::withHeaders($this->getApiHeaders())
                 ->asForm()
+                ->withoutVerifying()
                 ->put($this->apiBaseUrl . '/admin/verifications/' . $verificationId, [
                     'status' => $request->get('status')
                 ]);
@@ -559,6 +574,7 @@ class AdminController extends Controller
             }
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->get($this->apiBaseUrl . '/admin/disbursements', $params);
 
             if ($response->failed()) {
@@ -585,6 +601,7 @@ class AdminController extends Controller
             ]);
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->post($this->apiBaseUrl . '/admin/disbursements/process', $validated);
 
             if ($response->failed()) {
@@ -617,6 +634,7 @@ class AdminController extends Controller
             ]);
 
             $response = Http::withHeaders($this->getApiHeaders())
+                ->withoutVerifying()
                 ->post($this->apiBaseUrl . '/admin/disbursements/batch', $validated);
 
             if ($response->failed()) {
