@@ -237,7 +237,7 @@ function renderDisbursementsTable(data) {
                                                 </span>
                                             </td>
                                             <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
-                                                <button onclick="authorizeTransaction('${booking.booking_id}', '${disbursement.landlord_id}', ${booking.disbursement_amount})" 
+                                                <button onclick="authorizeTransaction('${booking.booking_id}', '${disbursement.landlord_id}', ${booking.platform_fee}, ${booking.disbursement_amount})" 
                                                         class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded text-sm"
                                                         ${booking.disbursement_status === 'completed' ? 'disabled' : ''}>
                                                     <i class="fas fa-check-circle mr-1"></i>Authorize
@@ -259,18 +259,18 @@ function renderDisbursementsTable(data) {
 }
 
 // Authorize individual transaction
-function authorizeTransaction(bookingId, landlordId, amount) {
-    if (!confirm(`Are you sure you want to authorize disbursement of ${amount.toFixed(2)} for this booking?`)) {
+function authorizeTransaction(bookingId, landlordId, platformFee, disbursementAmount) {
+    if (!confirm(`Are you sure you want to authorize disbursement of ${disbursementAmount.toFixed(2)} for this booking?`)) {
         return;
     }
-    
+
     const button = event.target;
     const originalText = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
-    
+
     const token = document.querySelector('meta[name="api-token"]')?.getAttribute('content');
-    
+
     fetch(API_BASE_URL + '/admin/disbursements/process', {
         method: 'POST',
         headers: {
@@ -281,7 +281,9 @@ function authorizeTransaction(bookingId, landlordId, amount) {
         body: JSON.stringify({
             booking_id: bookingId,
             landlord_id: landlordId,
-            amount: amount,
+            platform_fee: platformFee,
+            disbursement_amount: disbursementAmount,
+            amount: disbursementAmount,
             is_batch: false
         })
     })
