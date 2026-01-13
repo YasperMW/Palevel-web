@@ -87,7 +87,7 @@
 
 // Render function for disbursements table
 function renderDisbursementsTable(data) {
-    const disbursements = data.disbursements || [];
+    let disbursements = data.disbursements || [];
     const summary = data.summary || {};
     
     if (disbursements.length === 0) {
@@ -151,10 +151,24 @@ function renderDisbursementsTable(data) {
         </div>
     `;
     
-    // Disbursements table
+    // Only show landlords with at least one uncompleted disbursement
+    disbursements = disbursements.filter(d => d.bookings.some(b => b.disbursement_status !== 'completed'));
+
+    // Button to process all uncompleted disbursements
+    const processAllBtn = `
+        <div class="mb-4 flex justify-end">
+            <button onclick="processAllUncompletedDisbursements()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded text-sm font-bold">
+                <i class='fas fa-bolt mr-2'></i>Process All Uncompleted Disbursements
+            </button>
+        </div>
+    `;
+
     const tableHtml = `
+        ${processAllBtn}
         <div class="space-y-6">
             ${disbursements.map(disbursement => {
+                // Only show uncompleted bookings for batch
+                const uncompletedBookings = disbursement.bookings.filter(b => b.disbursement_status !== 'completed');
                 return `
                 <div class="border border-gray-200 rounded-lg overflow-hidden">
                     <!-- Landlord Header -->
@@ -173,16 +187,15 @@ function renderDisbursementsTable(data) {
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm text-gray-500">Total Disbursement</p>
-                                <p class="text-xl font-bold text-green-600">${disbursement.total_disbursement.toFixed(2)}</p>
-                                <button onclick="authorizeBatchDisbursement('${disbursement.landlord_id}', ${disbursement.total_disbursement}, ${disbursement.total_bookings})" 
+                                <p class="text-sm text-gray-500">Total Uncompleted Disbursement</p>
+                                <p class="text-xl font-bold text-green-600">${uncompletedBookings.reduce((sum, b) => sum + b.disbursement_amount, 0).toFixed(2)}</p>
+                                <button onclick="authorizeBatchDisbursement('${disbursement.landlord_id}', ${uncompletedBookings.reduce((sum, b) => sum + b.disbursement_amount, 0)}, ${uncompletedBookings.length})" 
                                         class="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
-                                        ${disbursement.bookings.every(b => b.disbursement_status === 'completed') ? 'disabled' : ''}>
-                                    <i class="fas fa-money-check-alt mr-2"></i>Authorize All (${disbursement.total_bookings})
+                                        ${uncompletedBookings.length === 0 ? 'disabled' : ''}>
+                                    <i class="fas fa-money-check-alt mr-2"></i>Authorize All (${uncompletedBookings.length})
                                 </button>
                             </div>
                         </div>
-                        
                         <!-- Payment Preferences -->
                         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="bg-white rounded p-3 border border-gray-200">
@@ -195,10 +208,9 @@ function renderDisbursementsTable(data) {
                             </div>
                         </div>
                     </div>
-                    
                     <!-- Bookings Table -->
                     <div class="p-6">
-                        <h5 class="text-sm font-medium text-gray-900 mb-3">Booking Details (${disbursement.total_bookings} bookings)</h5>
+                        <h5 class="text-sm font-medium text-gray-900 mb-3">Booking Details (${uncompletedBookings.length} uncompleted)</h5>
                         <div class="overflow-x-auto">
                             <table class="w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
@@ -214,7 +226,7 @@ function renderDisbursementsTable(data) {
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    ${disbursement.bookings.map(booking => `
+                                    ${uncompletedBookings.map(booking => `
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${booking.student_name}</td>
                                             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
@@ -254,10 +266,44 @@ function renderDisbursementsTable(data) {
             }).join('')}
         </div>
     `;
-    
     return summaryHtml + tableHtml;
 }
 
+// Process all uncompleted disbursements for all landlords
+function processAllUncompletedDisbursements() {
+    if (!confirm('Are you sure you want to process ALL uncompleted disbursements for all landlords?')) return;
+    const disbursementData = window.lastDisbursementData;
+    if (!disbursementData) return;
+    const disbursements = disbursementData.disbursements || [];
+    const requests = [];
+    disbursements.forEach(d => {
+        const uncompleted = d.bookings.filter(b => b.disbursement_status !== 'completed');
+        if (uncompleted.length > 0) {
+            requests.push(
+                fetch(API_BASE_URL + '/admin/disbursements/batch', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.getAttribute('content') || '')
+                    },
+                    body: JSON.stringify({
+                        landlord_id: d.landlord_id,
+                        total_amount: uncompleted.reduce((sum, b) => sum + b.disbursement_amount, 0),
+                        total_bookings: uncompleted.length
+                    })
+                })
+            );
+        }
+    });
+    Promise.all(requests)
+        .then(responses => Promise.all(responses.map(r => r.json())))
+        .then(results => {
+            showSuccessMessage('Processed all uncompleted disbursements!');
+            loadDisbursementsData();
+        })
+        .catch(() => showErrorMessage('Failed to process all uncompleted disbursements.'));
+}
 // Authorize individual transaction
 function authorizeTransaction(bookingId, landlordId, platformFee, disbursementAmount) {
     if (!confirm(`Are you sure you want to authorize disbursement of ${disbursementAmount.toFixed(2)} for this booking?`)) {
@@ -437,8 +483,8 @@ function loadDisbursementsData() {
         return response.json();
     })
     .then(data => {
+        window.lastDisbursementData = data;
         hideLoadingSpinner(container, data, renderDisbursementsTable);
-        
         // Update disbursements count in header
         const countElement = document.getElementById('disbursements-count');
         if (countElement) {
