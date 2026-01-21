@@ -23,6 +23,9 @@ class DashboardController extends Controller
         if (!$user || !$token) {
             return redirect()->route('login');
         }
+        
+        // Ensure token is clean
+        $token = trim($token);
 
         return match($user['user_type']) {
             'admin' => $this->adminDashboard($token),
@@ -63,7 +66,7 @@ class DashboardController extends Controller
             $stats = $this->apiService->getLandlordStats($user['email'], $token);
 
             // Get recent bookings
-            $bookings = $this->apiService->getBookings($token, ['limit' => 10]);
+            $bookings = $this->apiService->getLandlordBookings($token);
 
             return view('dashboard.landlord', compact('hostels', 'stats', 'bookings'));
 
@@ -72,7 +75,7 @@ class DashboardController extends Controller
                 'hostels' => [], 
                 'stats' => [], 
                 'bookings' => [],
-                'error' => 'Failed to load dashboard data'
+                'error' => 'Failed to load dashboard data: ' . $e->getMessage()
             ]);
         }
     }
@@ -84,10 +87,10 @@ class DashboardController extends Controller
             $hostels = $this->apiService->getAllHostels();
             
             // Get tenant's bookings
-            $bookings = $this->apiService->getBookings($token, ['student_id' => $user['user_id']]);
+            $bookings = $this->apiService->getMyBookings($token);
 
             // Get notifications
-            $notifications = $this->apiService->getNotifications($user['user_id'], $token);
+            $notifications = $this->apiService->getNotifications($user['user_id'] ?? '', $token);
 
             return view('dashboard.tenant', compact('hostels', 'bookings', 'notifications'));
 
@@ -96,7 +99,7 @@ class DashboardController extends Controller
                 'hostels' => [], 
                 'bookings' => [], 
                 'notifications' => [],
-                'error' => 'Failed to load dashboard data'
+                'error' => 'Failed to load dashboard data: ' . $e->getMessage()
             ]);
         }
     }
@@ -127,7 +130,125 @@ class DashboardController extends Controller
             return back()->withErrors($validator);
         }
 
-        // Note: Profile update would need to be implemented in the backend API
+        // Note: Profile update would need to be implemented in backend API
         return back()->with('success', 'Profile updated successfully!');
+    }
+
+    public function studentHome()
+    {
+        $user = Session::get('palevel_user');
+        $token = Session::get('palevel_token');
+
+        if (!$user || !$token) {
+            return redirect()->route('login');
+        }
+        
+        // Ensure token is clean
+        $token = trim($token);
+
+        try {
+            // Get all available hostels
+            $hostels = $this->apiService->getAllHostels();
+            
+            // Get tenant's bookings
+            $bookings = $this->apiService->getMyBookings($token);
+
+            // Get notifications
+            $notifications = $this->apiService->getNotifications($user['user_id'] ?? '', $token);
+
+            // Calculate stats
+            $availableHostels = count(array_filter($hostels, fn($h) => $h['is_active'] ?? false));
+            $totalSpent = array_sum(array_column($bookings, 'total_amount') ?? [0]);
+            $unreadNotifications = count(array_filter($notifications, fn($n) => !($n['is_read'] ?? false)));
+
+            return view('student.home', compact('hostels', 'bookings', 'notifications', 'availableHostels', 'totalSpent', 'unreadNotifications'));
+
+        } catch (\Exception $e) {
+            return view('student.home', [
+                'hostels' => [], 
+                'bookings' => [], 
+                'notifications' => [],
+                'availableHostels' => 0,
+                'totalSpent' => 0,
+                'unreadNotifications' => 0,
+                'error' => 'Failed to load dashboard data: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function studentBookings()
+    {
+        $user = Session::get('palevel_user');
+        $token = Session::get('palevel_token');
+
+        if (!$user || !$token) {
+            return redirect()->route('login');
+        }
+        
+        // Ensure token is clean
+        $token = trim($token);
+
+        try {
+            // Get tenant's bookings
+            $bookings = $this->apiService->getMyBookings($token);
+
+            // Get notifications
+            $notifications = $this->apiService->getNotifications($user['user_id'] ?? '', $token);
+            $unreadNotifications = count(array_filter($notifications, fn($n) => !($n['is_read'] ?? false)));
+
+            // Calculate booking stats
+            $confirmedBookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? '') === 'confirmed'));
+            $pendingBookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? '') === 'pending'));
+            $cancelledBookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? '') === 'cancelled'));
+
+            return view('student.bookings', compact('bookings', 'notifications', 'unreadNotifications', 'confirmedBookings', 'pendingBookings', 'cancelledBookings'));
+
+        } catch (\Exception $e) {
+            return view('student.bookings', [
+                'bookings' => [], 
+                'notifications' => [],
+                'unreadNotifications' => 0,
+                'confirmedBookings' => 0,
+                'pendingBookings' => 0,
+                'cancelledBookings' => 0,
+                'error' => 'Failed to load bookings data'
+            ]);
+        }
+    }
+
+    public function studentProfile()
+    {
+        $user = Session::get('palevel_user');
+        $token = Session::get('palevel_token');
+
+        if (!$user || !$token) {
+            return redirect()->route('login');
+        }
+        
+        // Ensure token is clean
+        $token = trim($token);
+
+        try {
+            // Get user profile
+            $profile = $this->apiService->getUserProfile(email: $user['email']);
+            
+            // Get tenant's bookings for stats
+            $bookings = $this->apiService->getBookings($token, ['student_id' => $user['user_id'] ?? '']);
+            $totalBookings = count($bookings);
+
+            // Get notifications
+            $notifications = $this->apiService->getNotifications($user['user_id'] ?? '', $token);
+            $unreadNotifications = count(array_filter($notifications, fn($n) => !($n['is_read'] ?? false)));
+
+            return view('student.profile', compact('profile', 'totalBookings', 'unreadNotifications'));
+
+        } catch (\Exception $e) {
+            return view('student.profile', [
+                'profile' => $user, 
+                'totalBookings' => 0,
+                'unreadNotifications' => 0,
+                'error' => 'Failed to load profile data'
+            ]);
+        }
     }
 }

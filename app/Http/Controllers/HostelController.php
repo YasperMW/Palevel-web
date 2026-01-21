@@ -20,21 +20,115 @@ class HostelController extends Controller
     {
         try {
             $hostels = $this->apiService->getAllHostels();
-            return view('hostels.index', compact('hostels'));
+            return view('student.hostels', compact('hostels'));
         } catch (\Exception $e) {
-            return view('hostels.index', ['hostels' => [], 'error' => 'Failed to load hostels']);
+            return view('student.hostels', ['hostels' => [], 'error' => 'Failed to load hostels']);
         }
     }
 
     public function show($id)
     {
+        // Debug: Log the received ID
+        \Log::info("HostelController::show called with ID: " . $id);
+        
         try {
             $hostel = $this->apiService->getHostel($id);
+            \Log::info("API call successful for hostel ID: " . $id);
+            
+            // Fetch additional data like the Flutter app does
+            $rooms = [];
+            $reviews = [];
+            $totalRooms = 0;
+            $availableRooms = 0;
+            $averageRating = 0;
+            $totalReviews = 0;
+            
+            try {
+                // Get rooms like Flutter app
+                $rooms = $this->apiService->getHostelRooms($id, ['user_type' => 'student']);
+                $totalRooms = count($rooms);
+                $availableRooms = count(array_filter($rooms, fn($r) => ($r['occupants'] ?? 0) < ($r['capacity'] ?? 1)));
+            } catch (\Exception $e) {
+                \Log::warning("Failed to load rooms for hostel {$id}: " . $e->getMessage());
+            }
+            
+            try {
+                // Get reviews like Flutter app
+                $reviews = $this->apiService->getHostelReviews($id);
+                $totalReviews = count($reviews);
+                if ($totalReviews > 0) {
+                    $averageRating = collect($reviews)->avg('rating') ?? 0;
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Failed to load reviews for hostel {$id}: " . $e->getMessage());
+            }
+            
+            return view('student.hostel-detail', [
+                'hostel' => $hostel,
+                'rooms' => $rooms,
+                'reviews' => $reviews,
+                'landlord' => [], // Landlord info not critical for initial load
+                'bookings' => [],
+                'totalRooms' => $totalRooms,
+                'availableRooms' => $availableRooms,
+                'averageRating' => $averageRating,
+                'totalReviews' => $totalReviews
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("HostelController::show failed: " . $e->getMessage());
+            \Log::error("Exception details: " . $e->getTraceAsString());
+            return redirect()->route('student.home')->with('error', 'Hostel not found');
+        }
+    }
+
+    // API Methods for AJAX calls
+    public function apiRooms($id)
+    {
+        try {
             $rooms = $this->apiService->getHostelRooms($id);
             
-            return view('hostels.show', compact('hostel', 'rooms'));
+            // Calculate available rooms count
+            $availableRooms = array_filter($rooms, fn($r) => $r['is_available'] ?? false);
+            
+            return response()->json([
+                'rooms' => $rooms,
+                'available_rooms_count' => count($availableRooms)
+            ]);
         } catch (\Exception $e) {
-            return redirect()->route('hostels.index')->with('error', 'Hostel not found');
+            \Log::error("API Error getting rooms: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to load rooms'], 500);
+        }
+    }
+
+    public function apiReviews($id)
+    {
+        try {
+            $reviews = $this->apiService->getHostelReviews($id);
+            
+            // Calculate rating statistics
+            $averageRating = $reviews ? collect($reviews)->avg('rating') : 0;
+            $totalReviews = count($reviews);
+            
+            return response()->json([
+                'reviews' => $reviews,
+                'average_rating' => $averageRating,
+                'total_reviews' => $totalReviews
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("API Error getting reviews: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to load reviews'], 500);
+        }
+    }
+
+    public function apiLandlord($id)
+    {
+        try {
+            $landlord = $this->apiService->getHostelLandlord($id);
+            
+            return response()->json($landlord);
+        } catch (\Exception $e) {
+            \Log::error("API Error getting landlord: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to load landlord information'], 500);
         }
     }
 
@@ -85,7 +179,7 @@ class HostelController extends Controller
             
             return view('hostels.rooms', compact('hostel', 'rooms'));
         } catch (\Exception $e) {
-            return redirect()->route('hostels.index')->with('error', 'Failed to load rooms');
+            return redirect()->route('student.home')->with('error', 'Failed to load rooms');
         }
     }
 
@@ -95,7 +189,7 @@ class HostelController extends Controller
             $hostel = $this->apiService->getHostel($hostelId);
             return view('hostels.create-room', compact('hostel'));
         } catch (\Exception $e) {
-            return redirect()->route('hostels.index')->with('error', 'Hostel not found');
+            return redirect()->route('student.home')->with('error', 'Hostel not found');
         }
     }
 

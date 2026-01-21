@@ -14,11 +14,17 @@ class AuthenticateWithPalevel
         $user = Session::get('palevel_user');
 
         if (!$token || !$user) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
             return redirect()->route('login')->with('error', 'Please login to continue.');
         }
 
         // Check role-based access if roles are specified
         if (!empty($roles) && !in_array($user['user_type'], $roles)) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthorized.'], 403);
+            }
             return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
         }
 

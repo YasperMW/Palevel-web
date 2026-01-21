@@ -1,0 +1,324 @@
+@extends('layouts.app')
+
+@section('title', 'Payment - PaLevel')
+
+@section('content')
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ route('student.bookings') }}" class="text-gray-600 hover:text-gray-900 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </a>
+                    <div class="ml-4">
+                        <h1 class="text-xl font-semibold text-gray-900">Secure Payment</h1>
+                        <p class="text-sm text-gray-600">Booking ID: #{{ $booking['booking_id'] }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Amount to Pay</p>
+                        <p class="text-2xl font-bold text-teal-600">MWK {{ number_format($booking['amount']) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Payment Webview -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">PayChangu Payment Gateway</h2>
+                                    <p class="text-sm text-gray-600">Complete your payment securely</p>
+                                </div>
+                            </div>
+                            <button onclick="refreshPayment()" class="text-gray-400 hover:text-gray-600 transition-colors p-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Iframe -->
+                    <div class="p-6 bg-gray-100">
+                        <div class="w-full h-[600px] bg-white rounded-lg shadow-inner overflow-hidden">
+                            <iframe 
+                                id="paymentFrame"
+                                src="{{ $paymentUrl }}" 
+                                class="w-full h-full border-0"
+                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
+                                onload="onPaymentLoad()"
+                                onerror="onPaymentError()">
+                            </iframe>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center text-sm text-gray-600">
+                                <svg class="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2h5.586l-1.293 1.293a1 1 0 00-1.414 1.414l3-3a1 1 0 001.414 0l3 3a1 1 0 00-1.414-1.414L11 11.586V14a1 1 0 11-2 0V9a1 1 0 112 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Secure payment powered by PayChangu
+                            </div>
+                            <div class="flex space-x-3">
+                                <button onclick="checkPaymentStatus()" class="px-4 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+                                    Check Payment Status
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Details Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Booking Details</h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Hostel Info -->
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Hostel</p>
+                            <p class="font-medium text-gray-900">{{ $booking['hostel']['name'] ?? 'N/A' }}</p>
+                        </div>
+                        
+                        <!-- Room Info -->
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Room</p>
+                            <p class="font-medium text-gray-900">{{ $booking['room']['room_number'] ?? 'N/A' }} ({{ $booking['room']['room_type'] ?? 'N/A' }})</p>
+                        </div>
+                        
+                        <!-- Duration -->
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Duration</p>
+                            <p class="font-medium text-gray-900">{{ $booking['duration_months'] ?? 0 }} {{ $booking['duration_months'] > 1 ? 'months' : 'month' }}</p>
+                        </div>
+                        
+                        <!-- Check-in Date -->
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Check-in Date</p>
+                            <p class="font-medium text-gray-900">{{ \Carbon\Carbon::parse($booking['check_in_date'])->format('d M Y') }}</p>
+                        </div>
+                        
+                        <!-- Payment Type -->
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Payment Type</p>
+                            <p class="font-medium text-gray-900">{{ $booking['payment_type'] === 'full_payment' ? 'Full Payment' : 'Booking Fee Only' }}</p>
+                        </div>
+                        
+                        <!-- Amount Breakdown -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <h4 class="text-sm font-semibold text-gray-900 mb-3">Payment Breakdown</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ $booking['payment_type'] === 'full_payment' ? 'Room Rent' : 'Booking Fee' }}</span>
+                                    <span class="font-medium">MWK {{ number_format($booking['amount'] - 2500) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Platform Fee</span>
+                                    <span class="font-medium">MWK 2,500</span>
+                                </div>
+                                <div class="flex justify-between text-base font-semibold text-teal-600 pt-2 border-t border-gray-200">
+                                    <span>Total Amount</span>
+                                    <span>MWK {{ number_format($booking['amount']) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="bg-blue-50 rounded-xl border border-blue-200 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3">Need Help?</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-blue-900">Payment Issues?</p>
+                                <p class="text-sm text-blue-700">If payment fails, try refreshing the page or contact support.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-blue-900">Contact Support</p>
+                                <p class="text-sm text-blue-700">support@palevel.mw or +265 999 123 456</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-sm mx-4 text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
+            <p class="text-gray-700 font-medium" id="loadingMessage">Processing...</p>
+        </div>
+    </div>
+
+    <!-- Success Notification -->
+    <div id="successNotification" class="fixed top-4 right-4 bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg shadow-lg z-50 hidden">
+        <div class="flex items-center">
+            <svg class="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h4 class="font-bold">Payment Successful!</h4>
+                <p class="text-sm">Redirecting to your bookings...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let paymentStatusInterval = null;
+const bookingId = '{{ $booking['booking_id'] }}';
+
+// Start payment status monitoring when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startPaymentStatusMonitoring();
+});
+
+function onPaymentLoad() {
+    console.log('Payment iframe loaded successfully');
+    hideLoading();
+}
+
+function onPaymentError() {
+    console.error('Payment iframe failed to load');
+    hideLoading();
+    showError('Payment gateway failed to load. Please try again.');
+}
+
+function refreshPayment() {
+    showLoading('Refreshing payment gateway...');
+    const iframe = document.getElementById('paymentFrame');
+    if (iframe) {
+        iframe.src = iframe.src;
+    }
+}
+
+function startPaymentStatusMonitoring() {
+    // Check payment status every 5 seconds
+    paymentStatusInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/payments/verify/?reference=${bookingId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${AUTH_TOKEN}`
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success || (result.status === 'success' && result.data?.status === 'completed')) {
+                // Payment successful
+                stopPaymentStatusMonitoring();
+                showSuccessNotification();
+                
+                // Redirect to bookings after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '{{ route("student.bookings") }}';
+                }, 3000);
+            } else if (result.status === 'completed') {
+                 // Handle direct backend response structure if different
+                stopPaymentStatusMonitoring();
+                showSuccessNotification();
+                setTimeout(() => {
+                    window.location.href = '{{ route("student.bookings") }}';
+                }, 3000);
+            }
+        } catch (error) {
+            console.log('Payment status check failed:', error);
+        }
+    }, 5000);
+}
+
+function stopPaymentStatusMonitoring() {
+    if (paymentStatusInterval) {
+        clearInterval(paymentStatusInterval);
+        paymentStatusInterval = null;
+    }
+}
+
+async function checkPaymentStatus() {
+    showLoading('Checking payment status...');
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/payments/verify/?reference=${bookingId}`, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${AUTH_TOKEN}`
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success || (result.status === 'success' && result.data?.status === 'completed') || result.status === 'completed') {
+            stopPaymentStatusMonitoring();
+            showSuccessNotification();
+            
+            setTimeout(() => {
+                window.location.href = '{{ route("student.bookings") }}';
+            }, 3000);
+        } else {
+            hideLoading();
+            alert('Payment not yet completed. Please complete the payment and try again.');
+        }
+    } catch (error) {
+        hideLoading();
+        alert('Error checking payment status: ' + error.message);
+    }
+}
+
+function showLoading(message = 'Processing...') {
+    document.getElementById('loadingMessage').textContent = message;
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+function showSuccessNotification() {
+    document.getElementById('successNotification').classList.remove('hidden');
+}
+
+function showError(message) {
+    alert(message);
+}
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', function() {
+    stopPaymentStatusMonitoring();
+});
+</script>
+@endsection

@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Palevel Dashboard') - Palevel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @stack('styles')
+    <script>
+        const API_BASE_URL = '{{ config("services.api.base_url", "http://192.168.43.12:8888") }}';
+        const AUTH_TOKEN = '{{ Session::get("palevel_token") }}';
+        const CURRENT_USER = @json(Session::get('palevel_user'));
+    </script>
 </head>
 <body class="bg-gray-50">
     <div id="app">

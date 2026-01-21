@@ -8,6 +8,7 @@ use App\Http\Controllers\HostelController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SignupController;
+use App\Http\Controllers\BookingController;
 
 // Include test routes (remove in production)
 require __DIR__.'/test.php';
@@ -112,18 +113,50 @@ Route::prefix('landlord')->name('landlord.')->middleware('auth.palevel:landlord'
     Route::post('/hostels/{id}/rooms', [HostelController::class, 'storeRoom'])->name('hostels.store-room');
 });
 
-// Tenant Routes
+// Student Routes
+Route::prefix('student')->name('student.')->middleware('auth.palevel:tenant')->group(function () {
+    Route::get('/home', [DashboardController::class, 'studentHome'])->name('home');
+    Route::get('/bookings', [DashboardController::class, 'studentBookings'])->name('bookings');
+    Route::get('/profile', [DashboardController::class, 'studentProfile'])->name('profile');
+    Route::get('/payment/{bookingId}', [BookingController::class, 'showPayment'])->name('payment');
+});
+
+// Tenant Routes (Redirect to Student Dashboard)
 Route::prefix('tenant')->name('tenant.')->middleware('auth.palevel:tenant')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', function() {
+        return redirect()->route('student.home');
+    })->name('dashboard');
 });
 
 // Common Routes
 Route::middleware('auth.palevel')->group(function () {
-    Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
-    Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
+    // API Routes for hostel details (AJAX calls) - must come first to take precedence
+    Route::prefix('api/hostels')->group(function () {
+        Route::get('{id}/rooms', [HostelController::class, 'apiRooms'])->name('api.hostels.rooms');
+        Route::get('{id}/reviews', [HostelController::class, 'apiReviews'])->name('api.hostels.reviews');
+        Route::get('{id}/landlord', [HostelController::class, 'apiLandlord'])->name('api.hostels.landlord');
+    });
     
-    // Hostel Routes (accessible by all authenticated users)
+    // API Routes for bookings
+    Route::prefix('api')->group(function () {
+        Route::post('/bookings', [BookingController::class, 'apiCreate'])->name('api.bookings.create');
+        Route::get('/user/bookings', [BookingController::class, 'apiUserBookings'])->name('api.user.bookings');
+        Route::get('/user/gender', [BookingController::class, 'apiUserGender'])->name('api.user.gender');
+        Route::get('/user/details', [BookingController::class, 'apiUserDetails'])->name('api.user.details');
+        Route::post('/payments/paychangu/initiate', [BookingController::class, 'apiInitiatePayment'])->name('api.payments.paychangu.initiate');
+        Route::get('/payments/verify', [BookingController::class, 'apiVerifyPayment'])->name('api.payments.verify');
+    });
+    
+    // Reviews API routes (for direct backend calls)
+    Route::prefix('reviews')->group(function () {
+        Route::get('hostel/{id}', [HostelController::class, 'apiReviews'])->name('reviews.hostel');
+    });
+    
+    // Hostel Routes (web views)
     Route::get('/hostels', [HostelController::class, 'index'])->name('hostels.index');
     Route::get('/hostels/{id}', [HostelController::class, 'show'])->name('hostels.show');
     Route::get('/hostels/{id}/rooms', [HostelController::class, 'rooms'])->name('hostels.rooms');
+    
+    Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
+    Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
 });

@@ -4,20 +4,20 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <!-- Branded Header -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-6 mb-8">
+    <!-- Teal Header - Matching Flutter App -->
+    <div class="bg-gradient-to-r from-teal-600 to-teal-400 rounded-xl shadow-lg p-6 mb-8">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
                     <img src="{{ asset('images/PaLevel Logo-White.png') }}" alt="PaLevel" class="h-12 w-auto">
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold text-white">Tenant Dashboard</h1>
-                    <p class="text-blue-100">Find your perfect accommodation</p>
+                    <h1 class="text-3xl font-bold text-white">Student Dashboard</h1>
+                    <p class="text-teal-100">Find your perfect accommodation</p>
                 </div>
             </div>
             <div class="hidden md:flex items-center space-x-2">
-                <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20">
                     <span class="text-white font-medium">Student Portal</span>
                 </div>
             </div>
@@ -37,7 +37,7 @@
             <form class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">University</label>
-                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
                         <option>All Universities</option>
                         <option>UNIMA</option>
                         <option>MUST</option>
@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">District</label>
-                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
                         <option>All Districts</option>
                         <option>Blantyre</option>
                         <option>Lilongwe</option>
@@ -55,7 +55,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
-                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
                         <option>Any Price</option>
                         <option>Under MWK 50,000</option>
                         <option>MWK 50,000 - 100,000</option>
@@ -63,7 +63,7 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="w-full bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
                         <i class="fas fa-search mr-2"></i>Search
                     </button>
                 </div>
@@ -103,7 +103,7 @@
                                         {{ ucfirst($booking['status']) }}
                                     </span>
                                     <div class="mt-2 space-x-2">
-                                        <button class="text-blue-600 hover:text-blue-800 text-sm">
+                                        <button class="text-teal-600 hover:text-teal-800 text-sm">
                                             <i class="fas fa-eye mr-1"></i>View
                                         </button>
                                         @if($booking['status'] === 'pending')
@@ -159,7 +159,7 @@
                                 </div>
                                 
                                 <div class="flex items-center justify-between mb-3">
-                                    <span class="text-lg font-bold text-blue-600">
+                                    <span class="text-lg font-bold text-teal-600">
                                         MWK {{ number_format($hostel['price_per_month'] ?? 0, 0) }}
                                         <span class="text-xs font-normal text-gray-500">/month</span>
                                     </span>
@@ -174,7 +174,7 @@
                                 
                                 <div class="flex space-x-2">
                                     <a href="{{ route('hostels.show', $hostel['hostel_id']) }}" 
-                                       class="flex-1 bg-blue-600 text-white text-center px-3 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                                       class="flex-1 bg-teal-600 text-white text-center px-3 py-2 rounded-md hover:bg-teal-700 text-sm font-medium">
                                         View Details
                                     </a>
                                     <button class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm">
@@ -202,16 +202,16 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Notifications</h3>
                 <div class="space-y-3">
                     @foreach(array_slice($notifications, 0, 5) as $notification)
-                        <div class="flex items-start p-3 bg-gray-50 rounded-lg @if(!$notification['is_read']) border-l-4 border-blue-500 @endif">
+                        <div class="flex items-start p-3 bg-gray-50 rounded-lg @if(!$notification['is_read']) border-l-4 border-teal-500 @endif">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-bell text-blue-500 mt-1"></i>
+                                <i class="fas fa-bell text-teal-500 mt-1"></i>
                             </div>
                             <div class="ml-3 flex-1">
                                 <p class="text-sm text-gray-900">{{ $notification['title'] ?? 'Notification' }}</p>
                                 <p class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($notification['created_at'])->diffForHumans() }}</p>
                             </div>
                             @if(!$notification['is_read'])
-                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                <span class="w-2 h-2 bg-teal-500 rounded-full"></span>
                             @endif
                         </div>
                     @endforeach

@@ -219,6 +219,93 @@
                         <p class="text-white/80">Chat directly with landlords for any questions</p>
                     </div>
                 </div>
+
+                <!-- Featured Hostels Section -->
+                <div id="hostels" class="mb-16">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl md:text-4xl font-bold text-white anta-font mb-4">Featured Hostels</h2>
+                        <p class="text-xl text-white/90 max-w-2xl mx-auto">
+                            Discover some of the best student accommodations available right now
+                        </p>
+                    </div>
+
+                    @if(isset($hostels) && count($hostels) > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            @foreach(array_slice($hostels, 0, 6) as $hostel)
+                                <div class="glass-effect rounded-2xl overflow-hidden transform hover:scale-105 transition-all duration-300">
+                                    <!-- Image -->
+                                    <div class="relative h-48 w-full">
+                                        @php
+                                            $coverImage = null;
+                                            if (isset($hostel['media']) && is_array($hostel['media'])) {
+                                                foreach ($hostel['media'] as $media) {
+                                                    if (isset($media['is_cover']) && $media['is_cover']) {
+                                                        $coverImage = $media['url'];
+                                                        break;
+                                                    }
+                                                }
+                                                if (!$coverImage && count($hostel['media']) > 0) {
+                                                    $coverImage = $hostel['media'][0]['url'];
+                                                }
+                                            }
+                                        @endphp
+                                        @if($coverImage)
+                                            <img src="{{ $coverImage }}" alt="{{ $hostel['name'] }}" 
+                                                 class="w-full h-full object-cover">
+                                        @else
+                                            <div class="w-full h-full bg-white/20 flex items-center justify-center">
+                                                <i class="fas fa-home text-white text-4xl"></i>
+                                            </div>
+                                        @endif
+                                        <div class="absolute top-4 right-4">
+                                            <span class="px-3 py-1 bg-teal-600 text-white text-xs font-bold rounded-full">
+                                                {{ $hostel['type'] ?? 'Hostel' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Content -->
+                                    <div class="p-6">
+                                        <h3 class="text-xl font-bold text-white mb-2 truncate">{{ $hostel['name'] }}</h3>
+                                        <p class="text-white/80 text-sm mb-4 flex items-center">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span class="truncate">{{ $hostel['address'] }}, {{ $hostel['district'] }}</span>
+                                        </p>
+                                        
+                                        <div class="flex items-center justify-between mb-4 text-white/90 text-sm">
+                                            <span><i class="fas fa-bed mr-1"></i> {{ $hostel['total_rooms'] ?? 0 }} Rooms</span>
+                                            <span class="truncate max-w-[50%]"><i class="fas fa-university mr-1"></i> {{ $hostel['university'] }}</span>
+                                        </div>
+                                        
+                                        <div class="border-t border-white/20 pt-4 flex items-center justify-between">
+                                            <div>
+                                                <span class="text-xl font-bold text-white">
+                                                    MK{{ number_format($hostel['price_per_month'] ?? 0) }}
+                                                </span>
+                                                <span class="text-white/70 text-sm">/mo</span>
+                                            </div>
+                                            <a href="{{ route('login') }}" class="bg-white text-teal-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        
+                        <div class="text-center mt-12">
+                            <a href="{{ route('register.choice') }}" class="inline-block border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-teal-700 transition-all duration-300">
+                                View All Hostels
+                            </a>
+                        </div>
+                    @else
+                        <div class="glass-effect rounded-2xl p-8 text-center max-w-2xl mx-auto">
+                            <i class="fas fa-building text-white text-4xl mb-4"></i>
+                            <p class="text-white text-lg">No hostels currently available to display.</p>
+                            <p class="text-white/80 mt-2">Check back soon or sign up to get notified when new hostels are added.</p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </main>
 
