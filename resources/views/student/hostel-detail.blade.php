@@ -744,6 +744,8 @@ let currentHostel = null;
 const PLATFORM_FEE = 2500; // PalLevel platform fee
 
 function openBookingModal(room, hostel) {
+    console.log('openBookingModal called with:', { room, hostel });
+    
     // Validate room and hostel data
     if (!room || !hostel) {
         console.error('Booking modal error: Missing room or hostel data', { room, hostel });
@@ -754,6 +756,10 @@ function openBookingModal(room, hostel) {
     // Check if room has required identifiers
     const roomId = room['room_id'] || room['id'];
     const hostelId = hostel['hostel_id'] || hostel['id'];
+    
+    console.log('Extracted IDs:', { roomId, hostelId });
+    console.log('Available room fields:', Object.keys(room));
+    console.log('Available hostel fields:', Object.keys(hostel));
     
     if (!roomId) {
         console.error('Booking modal error: Room missing ID', room);
@@ -1176,7 +1182,17 @@ async function proceedWithBooking(bookingData) {
             throw new Error('Failed to get user details');
         }
         
-        const userData = await userResponse.json();
+        const userResult = await userResponse.json();
+        
+        if (!userResult.success) {
+            throw new Error(userResult.message || 'Failed to get user details');
+        }
+        
+        const userData = userResult.data;
+        
+        if (!userData || !userData.email) {
+            throw new Error('User email is required for payment');
+        }
         
         // Step 3: Initiate PayChangu payment
         showLoadingState('Connecting to payment gateway...');
@@ -1219,8 +1235,11 @@ async function proceedWithBooking(bookingData) {
 // Create booking API call
 async function createBooking(bookingData) {
     // Validate required booking data
+    console.log('createBooking called with data:', bookingData);
+    
     if (!bookingData || !bookingData.roomId) {
         console.error('Booking error: Missing roomId', bookingData);
+        console.error('Current room data:', window.currentRoom);
         return { 
             success: false, 
             message: 'Room information is missing. Please try selecting the room again.' 
@@ -1293,6 +1312,20 @@ async function createBooking(bookingData) {
 
 // Initiate PayChangu payment
 async function initiatePayChanguPayment(bookingId, amount, userData) {
+    console.log('Initiating payment with:', { bookingId, amount, userData });
+    
+    const paymentData = {
+        booking_id: bookingId,
+        amount: amount,
+        email: userData.email,
+        phone_number: userData.phone_number || '',
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        currency: 'MWK'
+    };
+    
+    console.log('Payment request data:', paymentData);
+    
     const response = await fetch('/api/payments/paychangu/initiate', {
         method: 'POST',
         headers: {
@@ -1300,16 +1333,11 @@ async function initiatePayChanguPayment(bookingId, amount, userData) {
             'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         },
-        body: JSON.stringify({
-            booking_id: bookingId,
-            amount: amount,
-            email: userData.email,
-            phone_number: userData.phone_number || '',
-            first_name: userData.first_name || '',
-            last_name: userData.last_name || '',
-            currency: 'MWK'
-        })
+        body: JSON.stringify(paymentData)
     });
+    
+    console.log('Payment response status:', response.status);
+    console.log('Payment response headers:', response.headers);
     
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
@@ -1318,17 +1346,18 @@ async function initiatePayChanguPayment(bookingId, amount, userData) {
         console.error('Non-JSON response:', text);
         return { 
             success: false, 
-            message: 'Payment gateway returned non-JSON response. Please check payment API configuration.' 
+            message: `Payment gateway returned non-JSON response (${response.status}): ${text.substring(0, 200)}...` 
         };
     }
     
     try {
         const data = await response.json();
+        console.log('Payment response data:', data);
         
         if (response.ok) {
             return { success: true, data: data };
         } else {
-            return { success: false, message: data.message || 'Failed to initiate payment' };
+            return { success: false, message: data.message || `Payment initiation failed (${response.status})` };
         }
     } catch (error) {
         console.error('JSON parsing error:', error);

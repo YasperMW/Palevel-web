@@ -458,6 +458,13 @@ class PalevelApiService
         return $this->makeRequest('GET', "/hostels/{$hostelId}/landlord");
     }
 
+    public function getCurrentUser(string $token)
+    {
+        return $this->makeRequest('GET', '/users/me', [], [
+            'Authorization' => 'Bearer ' . trim($token)
+        ]);
+    }
+
     public function getHostelBookings(string $hostelId)
     {
         return $this->makeRequest('GET', "/hostels/{$hostelId}/bookings");
