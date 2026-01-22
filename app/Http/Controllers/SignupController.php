@@ -139,7 +139,23 @@ class SignupController extends Controller
             if (!empty($response['token']) && !empty($response['user'])) {
                 // Store authenticated session
                 Session::put('palevel_token', $response['token']);
-                Session::put('palevel_user', $response['user']);
+                
+                $user = $response['user'];
+                // Ensure email is present
+                if (!isset($user['email'])) {
+                    $user['email'] = $email;
+                }
+                Session::put('palevel_user', $user);
+
+                // Fetch and store user details
+                try {
+                    $userDetails = $this->apiService->getCurrentUser($response['token'], $user['email']);
+                    if ($userDetails) {
+                        Session::put('palevel_user_details', $userDetails);
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to fetch user details during OTP verification: " . $e->getMessage());
+                }
 
                 // Clear signup session data
                 Session::forget(['signup_data']);
@@ -314,12 +330,31 @@ class SignupController extends Controller
                 $response = $this->apiService->completeRoleSelection($roleData, $tempToken);
 
                 if (isset($response['token']) && isset($response['user'])) {
+                    $user = $response['user'];
+                    // Ensure email is present from temp oauth data if needed
+                    if (!isset($user['email'])) {
+                        $oauthUser = Session::get('temp_oauth_user', []);
+                        $user['email'] = $oauthUser['email'] ?? null;
+                    }
+
                     // Clear temporary OAuth data
                     Session::forget(['temp_oauth_token', 'temp_oauth_user']);
                     
                     // Store permanent session
                     Session::put('palevel_token', $response['token']);
-                    Session::put('palevel_user', $response['user']);
+                    Session::put('palevel_user', $user);
+
+                    // Fetch and store user details
+                    try {
+                        if (isset($user['email'])) {
+                            $userDetails = $this->apiService->getCurrentUser($response['token'], $user['email']);
+                            if ($userDetails) {
+                                Session::put('palevel_user_details', $userDetails);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::error("Failed to fetch user details during signup completion: " . $e->getMessage());
+                    }
 
                     return response()->json([
                         'success' => true,
@@ -450,12 +485,31 @@ class SignupController extends Controller
             $response = $this->apiService->completeRoleSelection($roleData, $tempToken);
 
             if (isset($response['token']) && isset($response['user'])) {
+                $user = $response['user'];
+                // Ensure email is present from temp oauth data if needed
+                if (!isset($user['email'])) {
+                    $oauthUser = Session::get('temp_oauth_user', []);
+                    $user['email'] = $oauthUser['email'] ?? null;
+                }
+
                 // Clear temporary OAuth data
                 Session::forget(['temp_oauth_token', 'temp_oauth_user']);
                 
                 // Store permanent session
                 Session::put('palevel_token', $response['token']);
-                Session::put('palevel_user', $response['user']);
+                Session::put('palevel_user', $user);
+
+                // Fetch and store user details
+                try {
+                    if (isset($user['email'])) {
+                        $userDetails = $this->apiService->getCurrentUser($response['token'], $user['email']);
+                        if ($userDetails) {
+                            Session::put('palevel_user_details', $userDetails);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to fetch user details during OAuth student completion: " . $e->getMessage());
+                }
 
                 return response()->json([
                     'success' => true,
@@ -521,12 +575,31 @@ class SignupController extends Controller
             $response = $this->apiService->completeRoleSelection($roleData, $tempToken);
 
             if (isset($response['token']) && isset($response['user'])) {
+                $user = $response['user'];
+                // Ensure email is present from temp oauth data if needed
+                if (!isset($user['email'])) {
+                    $oauthUser = Session::get('temp_oauth_user', []);
+                    $user['email'] = $oauthUser['email'] ?? null;
+                }
+
                 // Clear temporary OAuth data
                 Session::forget(['temp_oauth_token', 'temp_oauth_user']);
                 
                 // Store permanent session
                 Session::put('palevel_token', $response['token']);
-                Session::put('palevel_user', $response['user']);
+                Session::put('palevel_user', $user);
+
+                // Fetch and store user details
+                try {
+                    if (isset($user['email'])) {
+                        $userDetails = $this->apiService->getCurrentUser($response['token'], $user['email']);
+                        if ($userDetails) {
+                            Session::put('palevel_user_details', $userDetails);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to fetch user details during OAuth landlord completion: " . $e->getMessage());
+                }
 
                 return response()->json([
                     'success' => true,

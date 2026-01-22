@@ -46,10 +46,25 @@ class AuthController extends Controller
 
             $token = $response['token'];
             $user = $response['user'];
+            
+            // Ensure email is present in user object
+            if (!isset($user['email'])) {
+                $user['email'] = $request->email;
+            }
 
             // Store user session
             Session::put('palevel_token', $token);
             Session::put('palevel_user', $user);
+            
+            // Also store full user details in session for later use
+            try {
+                $userDetails = $this->apiService->getCurrentUser($token, $user['email'] ?? null);
+                if ($userDetails) {
+                    Session::put('palevel_user_details', $userDetails);
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed to fetch user details during login: " . $e->getMessage());
+            }
 
             // Redirect based on user type
             return match($user['user_type']) {

@@ -94,7 +94,14 @@
         </div>
 
         <!-- My Bookings Section -->
-        @if(isset($bookings) && count($bookings) > 0)
+        @php
+            // Filter only confirmed bookings and limit to 3 most recent
+            $confirmedBookings = collect($bookings ?? [])
+                ->filter(fn($booking) => ($booking['status'] ?? '') === 'confirmed')
+                ->take(3);
+        @endphp
+        
+        @if($confirmedBookings->count() > 0)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
@@ -102,7 +109,7 @@
                         <a href="{{ route('student.bookings') }}" class="text-teal-600 hover:text-teal-700 text-sm font-medium">View All →</a>
                     </div>
                     <div class="space-y-4">
-                        @foreach(array_slice($bookings, 0, 3) as $booking)
+                        @foreach($confirmedBookings as $booking)
                             <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
                                 <div class="flex items-center justify-between">
                                     <div class="flex-1">
@@ -122,22 +129,13 @@
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <span class="px-3 py-1 text-xs font-semibold rounded-full 
-                                            @if($booking['status'] === 'confirmed') bg-green-100 text-green-800
-                                            @elseif($booking['status'] === 'pending') bg-yellow-100 text-yellow-800
-                                            @else bg-red-100 text-red-800
-                                            @endif">
-                                            {{ ucfirst($booking['status'] ?? 'pending') }}
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            Confirmed
                                         </span>
-                                        <div class="mt-2 space-x-2">
+                                        <div class="mt-2">
                                             <a href="{{ route('student.bookings') }}" class="text-teal-600 hover:text-teal-800 text-sm font-medium">
                                                 View Details
                                             </a>
-                                            @if($booking['status'] === 'pending')
-                                                <button class="text-red-600 hover:text-red-800 text-sm font-medium">
-                                                    Cancel
-                                                </button>
-                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -254,36 +252,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Recent Notifications -->
-        @if(isset($notifications) && count($notifications) > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-semibold text-gray-900">Recent Notifications</h2>
-                        <a href="#" class="text-teal-600 hover:text-teal-700 text-sm font-medium">View All →</a>
-                    </div>
-                    <div class="space-y-3">
-                        @foreach(array_slice($notifications, 0, 4) as $notification)
-                            <div class="flex items-start p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 @if(!$notification['is_read']) border-l-4 border-teal-500 @endif">
-                                <div class="flex-shrink-0">
-                                    <svg class="w-5 h-5 text-teal-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <p class="text-sm font-medium text-gray-900">{{ $notification['title'] ?? 'Notification' }}</p>
-                                    <p class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($notification['created_at'])->diffForHumans() }}</p>
-                                </div>
-                                @if(!$notification['is_read'])
-                                    <span class="w-2 h-2 bg-teal-500 rounded-full flex-shrink-0 mt-2"></span>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        @endif
     </main>
 </div>
 

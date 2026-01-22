@@ -86,8 +86,8 @@
                                     <div class="flex items-center mt-2 space-x-4">
                                         <span class="text-sm text-gray-600">
                                             <i class="fas fa-calendar mr-1"></i>
-                                            {{ \Carbon\Carbon::parse($booking['start_date'])->format('M d, Y') }} - 
-                                            {{ \Carbon\Carbon::parse($booking['end_date'])->format('M d, Y') }}
+                                            {{ \Carbon\Carbon::parse($booking['start_date'] ?? $booking['check_in_date'] ?? $booking['checkInDate'] ?? 'now')->format('M d, Y') }} - 
+                                            {{ \Carbon\Carbon::parse($booking['end_date'] ?? $booking['check_out_date'] ?? $booking['checkOutDate'] ?? 'now')->format('M d, Y') }}
                                         </span>
                                         <span class="text-sm font-medium text-gray-900">
                                             MWK {{ number_format($booking['total_amount'], 2) }}

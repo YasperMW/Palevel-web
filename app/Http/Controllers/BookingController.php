@@ -83,7 +83,7 @@ class BookingController extends Controller
         }
     }
 
-    public function showPayment($bookingId)
+    public function showPayment($bookingId, Request $request)
     {
         try {
             // Get booking details from API
@@ -99,23 +99,15 @@ class BookingController extends Controller
                 return redirect()->route('student.bookings')->with('error', 'Booking not found');
             }
 
-            // Initiate PayChangu payment
-            $paymentData = [
-                'booking_id' => $bookingId,
-                'amount' => $booking['amount'],
-                'currency' => 'MWK',
-                'return_url' => route('student.bookings'),
-                'cancel_url' => route('student.bookings')
-            ];
-
-            $paymentResponse = $this->apiService->initiatePayChanguPayment($paymentData, $token);
+            // Payment should already be initiated by frontend
+            // Get payment URL from query parameter
+            $paymentUrl = $request->query('paymentUrl');
             
-            if (!$paymentResponse || !isset($paymentResponse['payment_url'])) {
-                return back()->with('error', 'Failed to initiate payment. Please try again.');
+            if (!$paymentUrl) {
+                return back()->with('error', 'Payment URL not found. Please initiate payment again.');
             }
-
-            $paymentUrl = $paymentResponse['payment_url'];
-
+            
+            // Just display the payment page with booking details and payment URL
             return view('student.payment', compact('booking', 'paymentUrl'));
 
         } catch (\Exception $e) {
@@ -133,7 +125,7 @@ class BookingController extends Controller
                 'check_in_date' => 'required|date|after:today',
                 'duration_months' => 'required|integer|min:1',
                 'amount' => 'required|numeric|min:0',
-                'payment_type' => 'required|in:full_payment,booking_fee',
+                'payment_type' => 'required|in:full,booking_fee',
                 'payment_method' => 'required|string',
                 'status' => 'required|string'
             ]);
@@ -197,13 +189,22 @@ class BookingController extends Controller
     public function apiUserGender(Request $request)
     {
         try {
-            $token = Session::get('palevel_token');
-            if (!$token) {
-                return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
+            // Get user details from session (stored during login)
+            $user = Session::get('palevel_user_details');
+            
+            if (!$user) {
+                // Fallback to API call if not in session
+                $token = Session::get('palevel_token');
+                if (!$token) {
+                    return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
+                }
+                
+                $user = $this->apiService->getCurrentUser($token);
+                if ($user) {
+                    Session::put('palevel_user_details', $user);
+                }
             }
-
-            // Get user details from API
-            $user = $this->apiService->getCurrentUser($token);
+            
             $gender = $user['gender'] ?? '';
 
             return response($gender, 200);
@@ -220,17 +221,25 @@ class BookingController extends Controller
     public function apiUserDetails(Request $request)
     {
         try {
-            $token = Session::get('palevel_token');
-            if (!$token) {
-                return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
+            // Get user details from session (stored during login)
+            $user = Session::get('palevel_user_details');
+            
+            if (!$user) {
+                // Fallback to API call if not in session
+                $token = Session::get('palevel_token');
+                if (!$token) {
+                    return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
+                }
+                
+                $user = $this->apiService->getCurrentUser($token);
+                if ($user) {
+                    Session::put('palevel_user_details', $user);
+                }
             }
-
-            // Get user details from API
-            $user = $this->apiService->getCurrentUser($token);
 
             return response()->json([
                 'success' => true,
-                'data' => $user
+                'data' => $user ?? []
             ]);
 
         } catch (\Exception $e) {
@@ -289,6 +298,14 @@ class BookingController extends Controller
 
     public function apiVerifyPayment(Request $request)
     {
+        // Log complete request details
+        Log::info('API Payment Verification Request', [
+            'headers' => $request->header(),
+            'query' => $request->query(),
+            'body' => $request->all(),
+            'reference' => $request->reference
+        ]);
+
         try {
             $request->validate([
                 'reference' => 'required|string'
@@ -296,11 +313,17 @@ class BookingController extends Controller
 
             $token = Session::get('palevel_token');
             if (!$token) {
+                Log::warning('Payment verification failed: User not authenticated');
                 return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
             }
 
             $reference = $request->reference;
+            
+            Log::info("Attempting to verify payment with reference: {$reference}");
+
             $payment = $this->apiService->verifyPayment($reference, $token);
+
+            Log::info("Payment verification successful for reference: {$reference}", ['response' => $payment]);
 
             return response()->json([
                 'success' => true,
@@ -309,11 +332,20 @@ class BookingController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error("API payment verification failed: " . $e->getMessage());
+            Log::error("API payment verification failed for reference {$request->reference}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Extract status code if available in exception message or default to 500
+            $statusCode = 500;
+            if (preg_match('/API request failed: (\d+)/', $e->getMessage(), $matches)) {
+                $statusCode = (int)$matches[1];
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to verify payment: ' . $e->getMessage()
-            ], 500);
+            ], $statusCode);
         }
     }
 }

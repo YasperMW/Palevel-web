@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'auth.palevel' => \App\Http\Middleware\AuthenticateWithPalevel::class,
+            'user.profile' => \App\Http\Middleware\UserProfileMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

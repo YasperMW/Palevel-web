@@ -1,5 +1,6 @@
 @php
     $currentUser = Session::get('palevel_user');
+    $userDetails = Session::get('palevel_user_details', $currentUser); // Fallback to basic user data
 @endphp
 
 <!-- Modern Navigation Header Matching Flutter App -->
@@ -17,7 +18,7 @@
                 
                 <!-- User Type Badge -->
                 <span class="hidden sm:inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
-                    {{ ucfirst($currentUser['user_type'] ?? 'user') }}
+                    {{ ucfirst($userDetails['user_type'] ?? $currentUser['user_type'] ?? 'user') }}
                 </span>
             </div>
 
@@ -61,9 +62,9 @@
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center space-x-2 p-2 text-white hover:bg-white/10 rounded-lg transition-colors duration-200">
                         <div class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white font-semibold border border-white/30">
-                            {{ strtoupper(substr($currentUser['first_name'] ?? 'U', 0, 1)) }}
+                            {{ strtoupper(substr($userDetails['first_name'] ?? $currentUser['first_name'] ?? 'U', 0, 1)) }}
                         </div>
-                        <span class="hidden sm:block text-sm font-medium">{{ $currentUser['first_name'] ?? 'User' }}</span>
+                        <span class="hidden sm:block text-sm font-medium">{{ $userDetails['first_name'] ?? $currentUser['first_name'] ?? 'User' }}</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
@@ -79,8 +80,8 @@
                          x-transition:leave-end="opacity-0 transform scale-95"
                          class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
                         <div class="p-4 border-b border-gray-200">
-                            <p class="text-sm font-semibold text-gray-900">{{ $currentUser['first_name'] ?? 'User' }} {{ $currentUser['last_name'] ?? '' }}</p>
-                            <p class="text-xs text-gray-500">{{ $currentUser['email'] ?? '' }}</p>
+                            <p class="text-sm font-semibold text-gray-900">{{ $userDetails['first_name'] ?? $currentUser['first_name'] ?? 'User' }} {{ $userDetails['last_name'] ?? $currentUser['last_name'] ?? '' }}</p>
+                            <p class="text-xs text-gray-500">{{ $userDetails['email'] ?? $currentUser['email'] ?? '' }}</p>
                         </div>
                         <div class="py-2">
                             <a href="{{ route('profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200">
@@ -132,14 +133,14 @@
              x-transition:leave-end="opacity-0 transform scale-95"
              class="lg:hidden bg-white/95 backdrop-blur-sm border-t border-white/20">
             <div class="px-4 py-3 space-y-1">
-                @if($currentUser['user_type'] === 'admin')
+                @if($userDetails['user_type'] ?? $currentUser['user_type'] ?? 'user' === 'admin')
                     <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">Dashboard</a>
                     <a href="{{ route('admin.students') }}" class="mobile-nav-link">Students</a>
                     <a href="{{ route('admin.landlords') }}" class="mobile-nav-link">Landlords</a>
                     <a href="{{ route('admin.hostels') }}" class="mobile-nav-link">Hostels</a>
                     <a href="{{ route('admin.bookings') }}" class="mobile-nav-link">Bookings</a>
                     <a href="{{ route('admin.payments') }}" class="mobile-nav-link">Payments</a>
-                @elseif($currentUser['user_type'] === 'landlord')
+                @elseif($userDetails['user_type'] ?? $currentUser['user_type'] ?? 'user' === 'landlord')
                     <a href="{{ route('landlord.dashboard') }}" class="mobile-nav-link">Dashboard</a>
                     <a href="{{ route('hostels.index') }}" class="mobile-nav-link">My Hostels</a>
                     <a href="{{ route('landlord.hostels.create') }}" class="mobile-nav-link mobile-nav-link--primary">Add Hostel</a>
@@ -157,74 +158,12 @@
 <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-16 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex space-x-4 justify-center overflow-x-auto">
-            @if($currentUser['user_type'] === 'admin')
-                <!-- Admin Navigation -->
-                <a href="{{ route('admin.dashboard') }}" class="second-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ route('admin.students') }}" class="second-nav-link {{ request()->routeIs('admin.students') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <span>Students</span>
-                </a>
-                <a href="{{ route('admin.landlords') }}" class="second-nav-link {{ request()->routeIs('admin.landlords') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                    <span>Landlords</span>
-                </a>
-                <a href="{{ route('admin.hostels') }}" class="second-nav-link {{ request()->routeIs('admin.hostels') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                    <span>Hostels</span>
-                </a>
-                <a href="{{ route('admin.bookings') }}" class="second-nav-link {{ request()->routeIs('admin.bookings') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                    <span>Bookings</span>
-                </a>
-                <a href="{{ route('admin.payments') }}" class="second-nav-link {{ request()->routeIs('admin.payments') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span>Payments</span>
-                </a>
-                
-            @elseif($currentUser['user_type'] === 'landlord')
+            @if(in_array($userDetails['user_type'] ?? $currentUser['user_type'] ?? 'user', ['admin']))
+                <!-- Admin Navigation - handled in separate files -->
+            @elseif(in_array($userDetails['user_type'] ?? $currentUser['user_type'] ?? 'user', ['landlord']))
                 <!-- Landlord Navigation -->
-                <a href="{{ route('landlord.dashboard') }}" class="second-nav-link {{ request()->routeIs('landlord.dashboard') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ route('hostels.index') }}" class="second-nav-link {{ request()->routeIs('hostels.index') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                    <span>My Hostels</span>
-                </a>
-                <a href="{{ route('landlord.hostels.create') }}" class="second-nav-link {{ request()->routeIs('landlord.hostels.create') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    <span>Add Hostel</span>
-                </a>
-                <a href="{{ route('hostels.index') }}" class="second-nav-link {{ request()->routeIs('hostels.analytics') ? 'active' : '' }}">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    <span>Analytics</span>
-                </a>
-                
             @else
-                <!-- Student/Tenant Navigation -->
+                <!-- Student Navigation -->
                 <a href="{{ route('student.home') }}" class="second-nav-link {{ request()->routeIs('student.home') ? 'active' : '' }}">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>

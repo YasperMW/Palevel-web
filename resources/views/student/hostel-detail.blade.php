@@ -629,13 +629,26 @@ function formatDate($dateString) {
                                id="startDate" 
                                name="startDate"
                                required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors duration-200"
+                               oninput="validateStartDate()"
                                onchange="calculateTotal()">
                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
+                    </div>
+                    <div id="startDateError" class="hidden mt-2 text-sm text-red-600 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span id="startDateErrorText"></span>
+                    </div>
+                    <div id="startDateSuccess" class="hidden mt-2 text-sm text-green-600 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Date is valid</span>
                     </div>
                 </div>
 
@@ -650,11 +663,24 @@ function formatDate($dateString) {
                                max="12" 
                                value="1"
                                required
-                               class="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                               class="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors duration-200"
+                               oninput="validateDuration()"
                                onchange="calculateTotal()">
                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                             <span class="text-gray-500 text-sm">months</span>
                         </div>
+                    </div>
+                    <div id="durationError" class="hidden mt-2 text-sm text-red-600 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span id="durationErrorText"></span>
+                    </div>
+                    <div id="durationSuccess" class="hidden mt-2 text-sm text-green-600 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Duration is valid</span>
                     </div>
                 </div>
 
@@ -707,7 +733,8 @@ function formatDate($dateString) {
                         Cancel
                     </button>
                     <button type="submit" 
-                            class="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-medium transition-colors duration-200">
+                            id="submitBookingBtn"
+                            class="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-medium transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed">
                         Proceed to Payment
                     </button>
                 </div>
@@ -822,12 +849,27 @@ function openBookingModal(room, hostel) {
     // Hide error message
     document.getElementById('bookingError').classList.add('hidden');
     
+    // Initialize validation state
+    const submitBtn = document.getElementById('submitBookingBtn');
+    submitBtn.disabled = true;
+    submitBtn.classList.add('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+    
+    // Clear any previous validation states
+    document.getElementById('startDate').classList.remove('border-red-500', 'border-green-500');
+    document.getElementById('duration').classList.remove('border-red-500', 'border-green-500');
+    document.getElementById('startDateError').classList.add('hidden');
+    document.getElementById('startDateSuccess').classList.add('hidden');
+    document.getElementById('durationError').classList.add('hidden');
+    document.getElementById('durationSuccess').classList.add('hidden');
+    
     // Show modal
     document.getElementById('bookingModal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     
-    // Calculate initial total
+    // Calculate initial total and run initial validation
     calculateTotal();
+    validateStartDate();
+    validateDuration();
 }
 
 function closeBookingModal() {
@@ -899,6 +941,142 @@ function number_format(num) {
     return new Intl.NumberFormat('en-MW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
 }
 
+// Real-time validation functions
+function validateStartDate() {
+    const startDateInput = document.getElementById('startDate');
+    const startDateError = document.getElementById('startDateError');
+    const startDateSuccess = document.getElementById('startDateSuccess');
+    const startDateErrorText = document.getElementById('startDateErrorText');
+    
+    const selectedDate = new Date(startDateInput.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for fair comparison
+    
+    // Reset validation states
+    startDateInput.classList.remove('border-red-500', 'border-green-500');
+    startDateError.classList.add('hidden');
+    startDateSuccess.classList.add('hidden');
+    
+    if (!startDateInput.value) {
+        startDateErrorText.textContent = 'Start date is required';
+        startDateError.classList.remove('hidden');
+        startDateInput.classList.add('border-red-500');
+        updateSubmitButtonState(false, false);
+        return false;
+    }
+    
+    if (selectedDate <= today) {
+        startDateErrorText.textContent = 'Start date must be in the future';
+        startDateError.classList.remove('hidden');
+        startDateInput.classList.add('border-red-500');
+        updateSubmitButtonState(false, null);
+        return false;
+    }
+    
+    // Check if date is too far in the future (more than 2 months)
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 2);
+    if (selectedDate > maxDate) {
+        startDateErrorText.textContent = 'Start date cannot be more than 2 months in advance';
+        startDateError.classList.remove('hidden');
+        startDateInput.classList.add('border-red-500');
+        updateSubmitButtonState(false, null);
+        return false;
+    }
+    
+    // Valid date
+    startDateSuccess.classList.remove('hidden');
+    startDateInput.classList.add('border-green-500');
+    updateSubmitButtonState(true, null);
+    return true;
+}
+
+function validateDuration() {
+    const durationInput = document.getElementById('duration');
+    const durationError = document.getElementById('durationError');
+    const durationSuccess = document.getElementById('durationSuccess');
+    const durationErrorText = document.getElementById('durationErrorText');
+    
+    const duration = parseInt(durationInput.value);
+    
+    // Reset validation states
+    durationInput.classList.remove('border-red-500', 'border-green-500');
+    durationError.classList.add('hidden');
+    durationSuccess.classList.add('hidden');
+    
+    if (!durationInput.value || isNaN(duration)) {
+        durationErrorText.textContent = 'Duration is required';
+        durationError.classList.remove('hidden');
+        durationInput.classList.add('border-red-500');
+        updateSubmitButtonState(null, false);
+        return false;
+    }
+    
+    if (duration < 1) {
+        durationErrorText.textContent = 'Duration must be at least 1 month';
+        durationError.classList.remove('hidden');
+        durationInput.classList.add('border-red-500');
+        updateSubmitButtonState(null, false);
+        return false;
+    }
+    
+    if (duration > 12) {
+        durationErrorText.textContent = 'Duration cannot exceed 12 months';
+        durationError.classList.remove('hidden');
+        durationInput.classList.add('border-red-500');
+        updateSubmitButtonState(null, false);
+        return false;
+    }
+    
+    // Valid duration
+    durationSuccess.classList.remove('hidden');
+    durationInput.classList.add('border-green-500');
+    updateSubmitButtonState(null, true);
+    return true;
+}
+
+function updateSubmitButtonState(startDateValid = null, durationValid = null) {
+    const submitBtn = document.getElementById('submitBookingBtn');
+    const startDateInput = document.getElementById('startDate');
+    const durationInput = document.getElementById('duration');
+    
+    // Use provided values or compute them
+    if (startDateValid === null) {
+        const maxDate = new Date();
+        maxDate.setMonth(maxDate.getMonth() + 2);
+        startDateValid = startDateInput.value && 
+                          new Date(startDateInput.value) > new Date(new Date().setHours(0, 0, 0, 0)) &&
+                          new Date(startDateInput.value) <= maxDate;
+    }
+    
+    if (durationValid === null) {
+        durationValid = durationInput.value && 
+                        !isNaN(parseInt(durationInput.value)) && 
+                        parseInt(durationInput.value) >= 1 && 
+                        parseInt(durationInput.value) <= 12;
+    }
+    
+    if (startDateValid && durationValid) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+    }
+}
+
+function showError(message) {
+    const bookingError = document.getElementById('bookingError');
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    bookingError.classList.remove('hidden');
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        bookingError.classList.add('hidden');
+    }, 5000);
+}
+
 // Handle form submission
 document.addEventListener('DOMContentLoaded', function() {
     const bookingForm = document.getElementById('bookingForm');
@@ -906,27 +1084,21 @@ document.addEventListener('DOMContentLoaded', function() {
         bookingForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Run validation first
+            const startDateValid = validateStartDate();
+            const durationValid = validateDuration();
+            
+            if (!startDateValid || !durationValid) {
+                showError('Please fix the validation errors before proceeding');
+                return;
+            }
+            
             const startDate = document.getElementById('startDate').value;
             const duration = parseInt(document.getElementById('duration').value) || 0;
             const paymentOption = document.querySelector('input[name="paymentOption"]:checked').value;
-            const bookingError = document.getElementById('bookingError');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            // Validation
-            if (!startDate) {
-                errorMessage.textContent = 'Please select a start date';
-                bookingError.classList.remove('hidden');
-                return;
-            }
-            
-            if (duration <= 0) {
-                errorMessage.textContent = 'Please enter a valid duration (greater than 0)';
-                bookingError.classList.remove('hidden');
-                return;
-            }
             
             // Hide error message
-            bookingError.classList.add('hidden');
+            document.getElementById('bookingError').classList.add('hidden');
             
             // Calculate total
             const roomPrice = parseFloat(currentRoom?.['price_per_month'] ?? 0);
@@ -1168,30 +1340,46 @@ async function proceedWithBooking(bookingData) {
             throw new Error(bookingResponse.message || 'Failed to create booking');
         }
         
-        const bookingId = bookingResponse.data.booking_id;
+        console.log('Booking response received:', bookingResponse);
+        console.log('Booking data structure:', bookingResponse.data);
+        console.log('Available keys in data:', Object.keys(bookingResponse.data || {}));
+        console.log('Full data object:', JSON.stringify(bookingResponse.data, null, 2));
         
-        // Step 2: Get user details for payment
-        const userResponse = await fetch('/api/user/details', {
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-            }
-        });
-        
-        if (!userResponse.ok) {
-            throw new Error('Failed to get user details');
+        // Extract booking ID from response - backend API returns data directly
+        let bookingId = null;
+        if (bookingResponse.data) {
+            // Backend API returns booking data directly (not nested)
+            bookingId = bookingResponse.data.booking_id || 
+                        bookingResponse.data.id || 
+                        bookingResponse.data.bookingId ||
+                        bookingResponse.data.booking;
+            console.log('Tried booking_id:', bookingResponse.data.booking_id);
+            console.log('Tried id:', bookingResponse.data.id);
+            console.log('Tried bookingId:', bookingResponse.data.bookingId);
+            console.log('Tried booking:', bookingResponse.data.booking);
         }
         
-        const userResult = await userResponse.json();
+        console.log('Extracted booking ID:', bookingId);
         
-        if (!userResult.success) {
-            throw new Error(userResult.message || 'Failed to get user details');
+        if (!bookingId) {
+            console.error('Could not extract booking ID from response:', bookingResponse);
+            throw new Error('Booking was created but could not extract booking ID. Please contact support.');
         }
         
-        const userData = userResult.data;
+        // Step 2: Use user data from session (no API call to avoid JWT expiration)
+        let userData = null;
+        
+        if (typeof CURRENT_USER !== 'undefined' && CURRENT_USER) {
+            userData = {
+                email: CURRENT_USER.email,
+                phone_number: CURRENT_USER.phone_number || '',
+                first_name: CURRENT_USER.first_name || '',
+                last_name: CURRENT_USER.last_name || ''
+            };
+        }
         
         if (!userData || !userData.email) {
-            throw new Error('User email is required for payment');
+            throw new Error('User email is required for payment. Please ensure your profile is complete.');
         }
         
         // Step 3: Initiate PayChangu payment
@@ -1204,6 +1392,7 @@ async function proceedWithBooking(bookingData) {
         }
         
         const paymentUrl = paymentResponse.data.payment_url;
+        const paymentId = paymentResponse.data.tx_ref;
         
         if (!paymentUrl) {
             throw new Error('Payment gateway did not return payment URL');
@@ -1215,15 +1404,14 @@ async function proceedWithBooking(bookingData) {
         // Store booking info for payment page
         sessionStorage.setItem('pendingBooking', JSON.stringify({
             bookingId: bookingId,
+            paymentId: paymentId,
             amount: bookingData.amount,
+            paymentUrl: paymentUrl,
             timestamp: Date.now()
         }));
         
         // Redirect to payment page
-        window.location.href = `/student/payment/${bookingId}`;
-        
-        // Show payment instructions
-        showPaymentInstructions(bookingId, paymentUrl);
+        window.location.href = `/student/payment/${bookingId}?paymentUrl=${encodeURIComponent(paymentUrl)}&paymentId=${encodeURIComponent(paymentId)}`;
         
     } catch (error) {
         console.error('Booking error:', error);
@@ -1264,19 +1452,19 @@ async function createBooking(bookingData) {
     
     console.log('Creating booking with data:', bookingData);
     
-    const response = await fetch('/api/bookings', {
+    const response = await fetch(`${API_BASE_URL}/bookings/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({
             room_id: bookingData.roomId,
             check_in_date: bookingData.startDate,
             duration_months: bookingData.duration,
             amount: bookingData.amount,
-            payment_type: bookingData.isFullPayment ? 'full_payment' : 'booking_fee',
+            payment_type: bookingData.isFullPayment ? 'full' : 'booking_fee',
             payment_method: 'paychangu',
             status: 'pending'
         })
@@ -1326,12 +1514,12 @@ async function initiatePayChanguPayment(bookingId, amount, userData) {
     
     console.log('Payment request data:', paymentData);
     
-    const response = await fetch('/api/payments/paychangu/initiate', {
+    const response = await fetch(`${API_BASE_URL}/payments/paychangu/initiate`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify(paymentData)
     });
@@ -1397,7 +1585,7 @@ function hideLoadingState() {
 }
 
 // Show payment instructions
-function showPaymentInstructions(bookingId, paymentUrl) {
+function showPaymentInstructions(bookingId, paymentUrl, paymentId) {
     hideLoadingState();
     
     // Create payment instructions modal
@@ -1440,7 +1628,7 @@ function showPaymentInstructions(bookingId, paymentUrl) {
                         class="flex-1 bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 font-medium transition-colors">
                     Reopen Payment
                 </button>
-                <button onclick="verifyPaymentAndRedirect('${bookingId}')" 
+                <button onclick="verifyPaymentAndRedirect('${paymentId || bookingId}')" 
                         class="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 font-medium transition-colors">
                     Verify Payment
                 </button>
@@ -1466,11 +1654,21 @@ function closePaymentInstructions() {
 }
 
 // Verify payment and redirect to bookings
-async function verifyPaymentAndRedirect(bookingId) {
+async function verifyPaymentAndRedirect(paymentId) {
     try {
         showLoadingState('Verifying payment...');
         
-        const response = await fetch(`/api/payments/verify?reference=${bookingId}`, {
+        // If paymentId is not provided or looks like a booking ID (numeric), try to get from session
+        if (!paymentId || /^\d+$/.test(paymentId)) {
+            try {
+                const pending = JSON.parse(sessionStorage.getItem('pendingBooking'));
+                if (pending && pending.paymentId) {
+                    paymentId = pending.paymentId;
+                }
+            } catch (e) {}
+        }
+
+        const response = await fetch(`/api/payments/verify?reference=${paymentId}`, {
             headers: {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
@@ -1523,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', function() {
         );
         
         if (shouldVerify) {
-            verifyPaymentAndRedirect(booking.bookingId);
+            verifyPaymentAndRedirect(booking.paymentId || booking.bookingId);
         } else {
             sessionStorage.removeItem('pendingBooking');
         }

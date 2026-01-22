@@ -105,16 +105,18 @@ Route::prefix('admin')->name('admin.')->middleware('auth.palevel:admin')->group(
 });
 
 // Landlord Routes
-Route::prefix('landlord')->name('landlord.')->middleware('auth.palevel:landlord')->group(function () {
+Route::prefix('landlord')->name('landlord.')->middleware(['auth.palevel:landlord', 'user.profile'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/hostels/create', [HostelController::class, 'create'])->name('hostels.create');
     Route::post('/hostels', [HostelController::class, 'store'])->name('hostels.store');
     Route::get('/hostels/{id}/rooms/create', [HostelController::class, 'createRoom'])->name('hostels.create-room');
     Route::post('/hostels/{id}/rooms', [HostelController::class, 'storeRoom'])->name('hostels.store-room');
+    Route::get('/bookings', [DashboardController::class, 'landlordBookings'])->name('bookings');
+    Route::get('/payments', [DashboardController::class, 'landlordPayments'])->name('payments');
 });
 
 // Student Routes
-Route::prefix('student')->name('student.')->middleware('auth.palevel:tenant')->group(function () {
+Route::prefix('student')->name('student.')->middleware(['auth.palevel:tenant', 'user.profile'])->group(function () {
     Route::get('/home', [DashboardController::class, 'studentHome'])->name('home');
     Route::get('/bookings', [DashboardController::class, 'studentBookings'])->name('bookings');
     Route::get('/profile', [DashboardController::class, 'studentProfile'])->name('profile');

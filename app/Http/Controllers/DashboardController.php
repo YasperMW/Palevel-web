@@ -145,6 +145,14 @@ class DashboardController extends Controller
         
         // Ensure token is clean
         $token = trim($token);
+        
+        // Robust email retrieval
+        $email = $user['email'] ?? null;
+        if (empty($email)) {
+            Log::error('User logged in but email missing in session', ['user' => $user]);
+            Session::flush(); // Clear corrupted session
+            return redirect()->route('login')->with('error', 'Session corrupted. Please login again.');
+        }
 
         try {
             // Get all available hostels
@@ -216,7 +224,7 @@ class DashboardController extends Controller
         }
     }
 
-    public function studentProfile()
+    public function landlordBookings()
     {
         $user = Session::get('palevel_user');
         $token = Session::get('palevel_token');
@@ -229,8 +237,94 @@ class DashboardController extends Controller
         $token = trim($token);
 
         try {
+            // Get landlord's bookings
+            $bookings = $this->apiService->getLandlordBookings($token);
+
+            // Get notifications
+            $notifications = $this->apiService->getNotifications($user['user_id'] ?? '', $token);
+            $unreadNotifications = count(array_filter($notifications, fn($n) => !($n['is_read'] ?? false)));
+
+            // Calculate booking stats
+            $confirmedBookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? '') === 'confirmed'));
+            $pendingBookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? '') === 'pending'));
+            $cancelledBookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? '') === 'cancelled'));
+
+            return view('landlord.bookings', compact('bookings', 'notifications', 'unreadNotifications', 'confirmedBookings', 'pendingBookings', 'cancelledBookings'));
+
+        } catch (\Exception $e) {
+            return view('landlord.bookings', [
+                'bookings' => [], 
+                'notifications' => [],
+                'unreadNotifications' => 0,
+                'confirmedBookings' => 0,
+                'pendingBookings' => 0,
+                'cancelledBookings' => 0,
+                'error' => 'Failed to load bookings data'
+            ]);
+        }
+    }
+
+    public function landlordPayments()
+    {
+        $user = Session::get('palevel_user');
+        $token = Session::get('palevel_token');
+
+        if (!$user || !$token) {
+            return redirect()->route('login');
+        }
+        
+        // Ensure token is clean
+        $token = trim($token);
+
+        try {
+            // Get landlord's payments
+            $payments = $this->apiService->getPayments($token);
+
+            // Get notifications
+            $notifications = $this->apiService->getNotifications($user['user_id'] ?? '', $token);
+            $unreadNotifications = count(array_filter($notifications, fn($n) => !($n['is_read'] ?? false)));
+
+            // Calculate payment stats
+            $totalRevenue = array_sum(array_column($payments, 'amount') ?? [0]);
+            $completedPayments = count(array_filter($payments, fn($p) => ($p['status'] ?? '') === 'completed'));
+            $pendingPayments = count(array_filter($payments, fn($p) => ($p['status'] ?? '') === 'pending'));
+
+            return view('landlord.payments', compact('payments', 'notifications', 'unreadNotifications', 'totalRevenue', 'completedPayments', 'pendingPayments'));
+
+        } catch (\Exception $e) {
+            return view('landlord.payments', [
+                'payments' => [], 
+                'notifications' => [],
+                'unreadNotifications' => 0,
+                'totalRevenue' => 0,
+                'completedPayments' => 0,
+                'pendingPayments' => 0,
+                'error' => 'Failed to load payments data'
+            ]);
+        }
+    }
+
+    public function studentProfile()
+    {
+        $user = Session::get('palevel_user');
+        $token = Session::get('palevel_token');
+
+        if (!$user || !$token) {
+            return redirect()->route('login');
+        }
+        
+        // Ensure token is clean
+        $token = trim($token);
+        
+        // Robust email retrieval
+        $email = $user['email'] ?? null;
+        if (empty($email)) {
+             return redirect()->route('login')->with('error', 'Session corrupted. Please login again.');
+        }
+
+        try {
             // Get user profile
-            $profile = $this->apiService->getUserProfile(email: $user['email']);
+            $profile = $this->apiService->getUserProfile(email: $email);
             
             // Get tenant's bookings for stats
             $bookings = $this->apiService->getBookings($token, ['student_id' => $user['user_id'] ?? '']);

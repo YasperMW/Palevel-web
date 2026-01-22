@@ -59,10 +59,26 @@ class GoogleAuthController extends Controller
 
             if (isset($response['token']) && isset($response['user'])) {
                 // Login successful - user already exists and has role
-                Session::put('palevel_token', $response['token']);
-                Session::put('palevel_user', $response['user']);
-
                 $user = $response['user'];
+                
+                // Ensure email is present in user object
+                if (!isset($user['email'])) {
+                    $user['email'] = $request->email;
+                }
+
+                Session::put('palevel_token', $response['token']);
+                Session::put('palevel_user', $user);
+
+                // Fetch and store user details
+                try {
+                    $userDetails = $this->apiService->getCurrentUser($response['token'], $user['email']);
+                    if ($userDetails) {
+                        Session::put('palevel_user_details', $userDetails);
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to fetch user details during Google login: " . $e->getMessage());
+                }
+
                 $redirectUrl = $this->getDashboardRouteForUser($user);
 
                 return response()->json([

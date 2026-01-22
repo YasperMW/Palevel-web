@@ -417,6 +417,40 @@ class PalevelApiService
         ]);
     }
 
+    public function getBooking(string $bookingId, string $token)
+    {
+        
+        // Get all user bookings and find the specific one
+        $allBookings = $this->getMyBookings($token);
+        
+        if (!is_array($allBookings)) {
+            return null;
+        }
+        
+        // Find the booking with the matching ID
+        foreach ($allBookings as $booking) {
+            if (isset($booking['booking_id']) && $booking['booking_id'] === $bookingId) {
+                return $booking;
+            }
+        }
+        
+        return null;
+    }
+
+    public function initiatePayChanguPayment(array $paymentData, string $token)
+    {
+        return $this->makeRequest('POST', '/payments/paychangu/initiate', $paymentData, [
+            'Authorization' => 'Bearer ' . trim($token)
+        ]);
+    }
+
+    public function verifyPayment(string $reference, string $token)
+    {
+        return $this->makeRequest('GET', '/payments/verify/', ['reference' => $reference], [
+            'Authorization' => 'Bearer ' . trim($token)
+        ]);
+    }
+
     public function getPayments(string $token, array $filters = [])
     {
         $endpoint = '/payments/?' . http_build_query($filters);
@@ -458,11 +492,21 @@ class PalevelApiService
         return $this->makeRequest('GET', "/hostels/{$hostelId}/landlord");
     }
 
-    public function getCurrentUser(string $token)
+    public function getCurrentUser(string $token, ?string $email = null)
     {
-        return $this->makeRequest('GET', '/users/me', [], [
-            'Authorization' => 'Bearer ' . trim($token)
-        ]);
+        // If email not provided, try to get from session
+        if (!$email) {
+            $user = \Illuminate\Support\Facades\Session::get('palevel_user');
+            $email = $user['email'] ?? null;
+        }
+        
+        if (!$email) {
+            $sessionUser = \Illuminate\Support\Facades\Session::get('palevel_user');
+            $debugInfo = json_encode($sessionUser);
+            throw new \Exception("Email is required to fetch current user profile. Session User: {$debugInfo}");
+        }
+        
+        return $this->getUserProfile(email: $email);
     }
 
     public function getHostelBookings(string $hostelId)
