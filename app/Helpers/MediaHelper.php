@@ -33,8 +33,17 @@ class MediaHelper
         // Ensure base URL doesn't have trailing slash
         $baseUrl = rtrim($baseUrl, '/');
         
+        // Clean the path
+        $cleanPath = ltrim($path, '/');
+        
+        // If the path doesn't start with 'media/' and the base URL doesn't end with '/media',
+        // and assuming the backend serves user uploads from /media/
+        if (!str_starts_with($cleanPath, 'media/') && !str_ends_with($baseUrl, '/media')) {
+            $cleanPath = 'media/' . $cleanPath;
+        }
+        
         // Ensure path starts with slash
-        $path = '/' . ltrim($path, '/');
+        $path = '/' . $cleanPath;
 
         return $baseUrl . $path;
     }
