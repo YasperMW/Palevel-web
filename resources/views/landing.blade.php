@@ -121,6 +121,10 @@
                            class="bg-white text-teal-700 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg">
                             Get Started
                         </a>
+                        <a href="{{ route('download.app') }}" 
+                           class="bg-gray-800 text-teal-100 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 hover:text-gray-800 transform hover:scale-105 transition-all duration-300 shadow-lg">
+                            Download App
+                        </a>
                     </div>
 
                     <!-- Mobile Menu Button -->
@@ -152,6 +156,10 @@
                             <a href="{{ route('register.choice') }}" 
                                class="bg-white text-teal-700 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg text-center">
                                 Get Started
+                            </a>
+                            <a href="{{ route('download.app') }}" 
+                               class="bg-gray-800 text-teal-100 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 hover:text-gray-800 transform hover:scale-105 transition-all duration-300 shadow-lg text-center">
+                                Download App
                             </a>
                         </div>
                     </div>
@@ -189,6 +197,11 @@
                            class="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-teal-700 transform hover:scale-105 transition-all duration-300">
                             <i class="fas fa-user-plus mr-2"></i>
                             Get Started
+                        </a>
+                        <a href="{{ route('download.app') }}" 
+                           class="bg-gray-800 text-teal-100 px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-teal-700 transform hover:scale-105 transition-all duration-300">
+                            <i class="fas fa-regular fa-download mr-2"></i>
+                            Download App
                         </a>
                     </div>
                 </div>

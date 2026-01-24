@@ -162,3 +162,7 @@ Route::middleware('auth.palevel')->group(function () {
     Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
     Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
 });
+
+Route::get('/download', function() {
+    return view('download');
+})->name('download.app');
