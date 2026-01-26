@@ -9,6 +9,7 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SignupController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DataDeletionController;
 
 // Include test routes (remove in production)
 require __DIR__.'/test.php';
@@ -172,6 +173,9 @@ Route::middleware('auth.palevel')->group(function () {
     
     Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
     Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
+    
+    Route::get('/data-deletion', [DataDeletionController::class, 'show'])->name('data.deletion');
+    Route::post('/data-deletion', [DataDeletionController::class, 'submit'])->name('data.deletion.submit');
 });
 
 Route::get('/download', function() {

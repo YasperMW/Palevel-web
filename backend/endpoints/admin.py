@@ -1084,3 +1084,178 @@ async def get_recent_signups(
         "signups": signups_data,
         "total": len(signups_data)
     }
+
+
+# Data Deletion Request Management
+@router.get("/data-deletion/requests")
+async def get_data_deletion_requests_admin(
+    current_user: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page")
+):
+    """Get all data deletion requests with pagination and filtering"""
+    from models import DataDeletionRequest
+    from sqlalchemy.orm import joinedload
+    from sqlalchemy import desc
+    
+    try:
+        query = db.query(DataDeletionRequest).options(
+            joinedload(DataDeletionRequest.admin)
+        )
+        
+        if status:
+            query = query.filter(DataDeletionRequest.status == status)
+        
+        offset = (page - 1) * limit
+        requests = query.order_by(desc(DataDeletionRequest.created_at)).offset(offset).limit(limit).all()
+        
+        total = query.count()
+        
+        return {
+            "requests": requests,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "pages": (total + limit - 1) // limit
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching data deletion requests: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch data deletion requests"
+        )
+
+
+@router.get("/data-deletion/requests/{request_id}")
+async def get_data_deletion_request_admin(
+    request_id: uuid.UUID,
+    current_user: User = Depends(require_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific data deletion request"""
+    from models import DataDeletionRequest
+    from sqlalchemy.orm import joinedload
+    
+    try:
+        deletion_request = db.query(DataDeletionRequest).options(
+            joinedload(DataDeletionRequest.admin)
+        ).filter(DataDeletionRequest.request_id == request_id).first()
+        
+        if not deletion_request:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Data deletion request not found"
+            )
+        
+        return deletion_request
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching data deletion request {request_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch data deletion request"
+        )
+
+
+@router.put("/data-deletion/requests/{request_id}/process")
+async def process_data_deletion_request(
+    request_id: uuid.UUID,
+    action: dict = Body(...),
+    current_user: User = Depends(require_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Process a data deletion request (approve/reject)"""
+    from models import DataDeletionRequest
+    from datetime import datetime
+    
+    try:
+        deletion_request = db.query(DataDeletionRequest).filter(
+            DataDeletionRequest.request_id == request_id
+        ).first()
+        
+        if not deletion_request:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Data deletion request not found"
+            )
+        
+        status = action.get("status")
+        admin_notes = action.get("admin_notes", "")
+        
+        if status not in ["processing", "completed", "rejected"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid status. Must be one of: processing, completed, rejected"
+            )
+        
+        # Update the request
+        deletion_request.status = status
+        deletion_request.admin_notes = admin_notes
+        deletion_request.processed_by = current_user.user_id
+        deletion_request.processed_at = datetime.utcnow()
+        
+        db.commit()
+        
+        logger.info(f"Data deletion request {request_id} marked as {status} by admin {current_user.user_id}")
+        
+        return {
+            "message": f"Data deletion request marked as {status}",
+            "request_id": str(request_id),
+            "status": status
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing data deletion request {request_id}: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process data deletion request"
+        )
+
+
+@router.get("/data-deletion/stats")
+async def get_data_deletion_stats_admin(
+    current_user: User = Depends(require_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get data deletion request statistics"""
+    from models import DataDeletionRequest
+    
+    try:
+        total = db.query(DataDeletionRequest).count()
+        pending = db.query(DataDeletionRequest).filter(DataDeletionRequest.status == "pending").count()
+        processing = db.query(DataDeletionRequest).filter(DataDeletionRequest.status == "processing").count()
+        completed = db.query(DataDeletionRequest).filter(DataDeletionRequest.status == "completed").count()
+        rejected = db.query(DataDeletionRequest).filter(DataDeletionRequest.status == "rejected").count()
+        
+        # Recent requests (last 30 days)
+        from datetime import timedelta
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        recent = db.query(DataDeletionRequest).filter(
+            DataDeletionRequest.created_at >= thirty_days_ago
+        ).count()
+        
+        return {
+            "total_requests": total,
+            "pending": pending,
+            "processing": processing,
+            "completed": completed,
+            "rejected": rejected,
+            "recent_30_days": recent
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching data deletion stats: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch data deletion statistics"
+        )

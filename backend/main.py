@@ -18,7 +18,7 @@ from endpoints import users, hostels, rooms, media, config, bookings, browse
 from endpoints import payments, health, verifications
 from endpoints import messages, websocket
 from endpoints import notifications, reviews, activities
-from endpoints import payment_references, admin, oauth, pdf_service, banks
+from endpoints import payment_references, admin, oauth, pdf_service, banks, data_deletion
 from endpoints.payments_manual_verification import router as manual_verification_router
 from endpoints.websocket import websocket_endpoint
 
@@ -212,6 +212,7 @@ app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(oauth.router, prefix="/auth", tags=["oauth"])
 app.include_router(pdf_service.router)
 app.include_router(banks.router, tags=["banks"])
+app.include_router(data_deletion.router, prefix="/api/data-deletion", tags=["data-deletion"])
 
 # Add request timing middleware
 @app.middleware("http")

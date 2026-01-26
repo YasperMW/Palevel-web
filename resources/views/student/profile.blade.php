@@ -1,3 +1,8 @@
+@php
+    $currentUser = Session::get('palevel_user');
+    $profileData = isset($profile) ? $profile : $currentUser;
+@endphp
+
 @extends('layouts.app')
 
 @section('title', 'Student Profile')
@@ -61,13 +66,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                             </div>
-                            <h2 class="text-xl font-semibold text-gray-900">{{ Auth::user()->name ?? 'Student Name' }}</h2>
-                            <p class="text-gray-500">{{ Auth::user()->email ?? 'student@example.com' }}</p>
+                            <h2 class="text-xl font-semibold text-gray-900">{{ $profileData['name'] ?? 'Student Name' }}</h2>
+                            <p class="text-gray-500">{{ $profileData['email'] ?? 'student@example.com' }}</p>
                             <div class="mt-4 flex items-center justify-center space-x-2">
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">
                                     Student
                                 </span>
-                                @if(Auth::user()->email_verified_at ?? false)
+                                @if($profileData['email_verified_at'] ?? false)
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                         Verified
                                     </span>
@@ -79,7 +84,7 @@
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm text-gray-500">Member Since</span>
-                                    <span class="text-sm font-medium text-gray-900">{{ Auth::user()->created_at ? \Carbon\Carbon::parse(Auth::user()->created_at)->format('M Y') : 'Unknown' }}</span>
+                                    <span class="text-sm font-medium text-gray-900">{{ $profileData['created_at'] ? \Carbon\Carbon::parse($profileData['created_at'])->format('M Y') : 'Unknown' }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm text-gray-500">Total Bookings</span>
@@ -110,13 +115,13 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                                    <input type="text" value="{{ Auth::user()->name ?? '' }}" 
+                                    <input type="text" value="{{ $profileData['first_name'] ?? '' }}" 
                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                                            placeholder="Enter your first name">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                                    <input type="text" value="{{ Auth::user()->last_name ?? '' }}" 
+                                    <input type="text" value="{{ $profileData['last_name'] ?? '' }}" 
                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                                            placeholder="Enter your last name">
                                 </div>
@@ -124,14 +129,14 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                <input type="email" value="{{ Auth::user()->email ?? '' }}" 
+                                <input type="email" value="{{ $profileData['email'] ?? '' }}" 
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                                        placeholder="Enter your email address">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                <input type="tel" value="{{ Auth::user()->phone ?? '' }}" 
+                                <input type="tel" value="{{ $profileData['phone'] ?? '' }}" 
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                                        placeholder="Enter your phone number">
                             </div>
@@ -148,7 +153,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Student ID</label>
-                                    <input type="text" value="{{ Auth::user()->student_id ?? '' }}" 
+                                    <input type="text" value="{{ $profileData['student_id'] ?? '' }}" 
                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                                            placeholder="Enter your student ID">
                                 </div>
@@ -158,7 +163,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                                 <textarea rows="4" 
                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                                          placeholder="Tell us about yourself">{{ Auth::user()->bio ?? '' }}</textarea>
+                                          placeholder="Tell us about yourself">{{ $profileData['bio'] ?? '' }}</textarea>
                             </div>
                             
                             <div class="flex items-center justify-end space-x-4">
@@ -211,6 +216,23 @@
                                 <button class="text-teal-600 hover:text-teal-700 text-sm font-medium">
                                     Enable
                                 </button>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 border border-red-200 bg-red-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-red-100 rounded-lg p-2">
+                                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-900">Data Deletion Request</h4>
+                                        <p class="text-sm text-gray-500">Request permanent deletion of your account and data</p>
+                                    </div>
+                                </div>
+                                <a href="{{ route('data.deletion') }}" class="text-red-600 hover:text-red-700 text-sm font-medium">
+                                    Request Deletion
+                                </a>
                             </div>
                         </div>
                     </div>

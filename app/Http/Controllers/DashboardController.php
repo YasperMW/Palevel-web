@@ -110,10 +110,10 @@ class DashboardController extends Controller
         
         try {
             $profile = $this->apiService->getUserProfile(email: $user['email']);
-            return view('profile.show', compact('profile'));
+            return view('student.profile', compact('profile'));
 
         } catch (\Exception $e) {
-            return view('profile.show', ['profile' => $user, 'error' => 'Failed to load profile data']);
+            return view('student.profile', ['profile' => $user, 'error' => 'Failed to load profile data']);
         }
     }
 

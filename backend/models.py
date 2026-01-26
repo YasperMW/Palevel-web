@@ -937,3 +937,91 @@ class BatchDisbursementCreate(BaseModel):
     class Config:
         from_attributes = True
 
+
+class DataDeletionRequest(Base):
+    """SQLAlchemy model for data deletion requests."""
+    
+    __tablename__ = "data_deletion_requests"
+    
+    request_id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("uuid_generate_v4()"),
+    )
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    phone = Column(String(20), nullable=False)
+    reason = Column(Text, nullable=False)
+    data_categories = Column(JSONB, nullable=False)  # Store array of categories
+    confirmation = Column(Boolean, nullable=False, default=False)
+    status = Column(
+        String(20),
+        default="pending",
+        nullable=False,
+    )  # 'pending', 'processing', 'completed', 'rejected'
+    admin_notes = Column(Text, nullable=True)
+    processed_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.user_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    
+    # Relationships
+    admin = relationship("User", foreign_keys=[processed_by])
+
+
+class DataDeletionRequestCreate(BaseModel):
+    """Schema for creating data deletion requests."""
+    name: str
+    email: str
+    phone: str
+    reason: str
+    data_categories: list[str]
+    confirmation: bool
+    
+    class Config:
+        from_attributes = True
+
+
+class DataDeletionRequestResponse(BaseModel):
+    """Schema for data deletion request responses."""
+    request_id: PyUUID
+    name: str
+    email: str
+    phone: str
+    reason: str
+    data_categories: list[str]
+    status: str
+    admin_notes: str | None = None
+    processed_by: PyUUID | None = None
+    processed_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+    
+    # Include related data
+    admin: dict | None = None
+    
+    class Config:
+        from_attributes = True
+
+
+class DataDeletionRequestUpdate(BaseModel):
+    """Schema for updating data deletion requests."""
+    status: str
+    admin_notes: str | None = None
+    
+    class Config:
+        from_attributes = True
+
